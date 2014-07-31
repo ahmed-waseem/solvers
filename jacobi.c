@@ -1,15 +1,57 @@
-#include "common.h"
 #include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+
+#include "jacobi.h"
 #include "matrix.h"
 
 /* Number of threads used */
 #define NR_THREADS 1
 
-void jacobi(double **a, double **c, int size)
+void jacobi(char *inFilename, char *outFilename)
 {
+	int size;
+
+    double **a, *c;
+    double *a_block;
+
+    int i, j;
+
+    FILE *fin, *fout;
+    fin = fopen(inFilename, "r");
+    if(fin == NULL )
+    {
+       perror("Error while opening input file.\n");
+       exit(EXIT_FAILURE);
+    }
+    fout = fopen(outFilename, "w");
+    if(fout == NULL )
+    {
+       perror("Error while opening output file.\n");
+       exit(EXIT_FAILURE);
+    }
+
+	fscanf(fin, "%d", &size);
+
+    a = (double **) malloc(size*sizeof(double *)); /* matrix a to be multiplied */
+    c = (double *) malloc(size*sizeof(double *)); /* result matrix c */
+
+    a_block = (double *) malloc(size*size*sizeof(double)); /* Storage for matrices */
+    for (i=0; i<size; i++)   /* Initialize pointers to a */
+        a[i] = a_block+i*size;
+
+
+    printf("Data read is :\n");
+	for(i=0; i<size; i++) {
+		for(j=0; j<size; j++) {
+			fscanf(fin, "%lf", &a[i][j]);
+			printf("%f, ", a[i][j]);
+		}
+		fscanf(fin, "%lf", &c[i]);
+		printf("%f\n", c[i]);
+	}
+
 	double *approx1, *approx2;
 	int tid;
 	int count = 0;
@@ -57,8 +99,8 @@ void jacobi(double **a, double **c, int size)
 					sum += a[p][q] * approx1[q];
 				}
 				temp = a[p][p] * approx1[p];
-				approx2[p] = (c[p][0] - (sum - temp))/a[p][p];
-				// printf("Values for %d are %f, %f, %f, %f, %f and %f\n", p, sum, temp, approx1[p], approx2[p], a[p][p], c[p][0]);
+				approx2[p] = (c[p] - (sum - temp))/a[p][p];
+				// printf("Values for %d are %f, %f, %f, %f, %f and %f\n", p, sum, temp, approx1[p], approx2[p], a[p][p], c[p]);
 			}
 			diff = 0;
 			repeat = 0;
@@ -76,12 +118,82 @@ void jacobi(double **a, double **c, int size)
 		}
 	}
 
-	printf("\nFinal resultant matrix (after %d iterations using Jacobi): ", count);
+	printf("\nFinal resultant matrix (after %d iterations using Jacobi) in %s\n", count, outFilename);
 	for(p=0; p<size; p++)
 	{
-		printf("%f, ",approx2[p]);
+		fprintf(fout, "%f\n",approx2[p]);
 	}
-	printf("\n");
+
+    fclose(fin);
+    fclose(fout);
+}
+
+void generate_jacobi_data(char *filename, int size)
+{
+    int	i, j;
+    double **a, **b, **c;
+    double *a_block, *b_block, *c_block;
+
+    a = (double **) malloc(size*sizeof(double *)); /* matrix a to be multiplied */
+    b = (double **) malloc(size*sizeof(double *)); /* matrix b to be multiplied */
+    c = (double **) malloc(size*sizeof(double *)); /* result matrix c */
+
+    a_block = (double *) malloc(size*size*sizeof(double)); /* Storage for matrices */
+    b_block = (double *) malloc(size*size*sizeof(double));
+    c_block = (double *) malloc(size*size*sizeof(double));
+
+    FILE *fout;
+    fout = fopen(filename, "w");
+    if(fout == NULL )
+    {
+       perror("Error while opening output file.\n");
+       exit(EXIT_FAILURE);
+    }
+
+    for (i=0; i<size; i++)   /* Initialize pointers to a */
+        a[i] = a_block+i*size;
+
+    for (i=0; i<size; i++)   /* Initialize pointers to b */
+        b[i] = b_block+i*size;
+
+    for (i=0; i<size; i++)   /* Initialize pointers to c */
+        c[i] = c_block+i*size;
+
+    srand(time(NULL));
+    init_jacobi_matrix(a, size);
+    init_matrix(b, size, 1, 0, 100);
+    matrix_mul(size, size, 1, a, b, c);
+
+    for(i=0; i<size; i++) {
+        for(j=0; j<size; j++) {
+        	fprintf(fout, "%lf ", a[i][j]);
+        }
+        fprintf(fout, "%lf ", c[i]);
+    }
+
+}
+
+/*
+ * Purpose : Initializes a matrix for Jacobi calculations with random values
+ * 			 The diagonal will have higher elements as compared to the others.
+ * Input : 	1. Matrix
+ * 			2. Row size
+ * 			3. Column size
+ */
+void init_jacobi_matrix(double **x, int size)
+{
+
+    int	i, j;
+
+    for(i=0; i<size; i++)
+        for(j=0; j<size; j++)
+            if(i==j)
+            {
+                x[i][j] = (rand() % 10)+10000;
+            }
+            else
+                x[i][j] = (rand() % 5)+1;
+
 }
 
 

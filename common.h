@@ -8,9 +8,6 @@
 #ifndef COMMON_H_
 #define COMMON_H_
 
-#define TOL 0.0001
-
-void jacobi(double **a, double **c, int size);
-
+#include <stdlib.h>
 
 #endif /* COMMON_H_ */

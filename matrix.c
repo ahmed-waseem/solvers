@@ -8,28 +8,6 @@
 #include <stdio.h>
 #include "matrix.h"
 
-/*
- * Purpose : Initializes a matrix for Jacobi calculations with random values
- * 			 The diagonal will have higher elements as compared to the others.
- * Input : 	1. Matrix
- * 			2. Row size
- * 			3. Column size
- */
-void init_jacobi_matrix(double **x, int size)
-{
-
-    int	i, j;
-
-    for(i=0; i<size; i++)
-        for(j=0; j<size; j++)
-            if(i==j)
-            {
-                x[i][j] = (rand() % 10)+10000;
-            }
-            else
-                x[i][j] = (rand() % 5)+1;
-
-}
 
 /*
  * Purpose : Initializes a matrix with random values
